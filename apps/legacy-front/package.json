@@ -1,0 +1,17 @@
+{
+  "name": "legacy-front",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SPA AngularJS 1.5 do legado. Sem build step: os arquivos de public/ sao servidos como estao.",
+  "scripts": {
+    "vendor": "node scripts/vendor.js",
+    "postinstall": "node scripts/vendor.js",
+    "lint": "echo \"legacy-front: sem linter (codigo servido como esta)\" && exit 0",
+    "test": "echo \"legacy-front: sem testes no boilerplate\" && exit 0"
+  },
+  "devDependencies": {
+    "angular": "1.5.11",
+    "angular-route": "1.5.11"
+  },
+  "license": "UNLICENSED"
+}

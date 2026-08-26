@@ -1,0 +1,14 @@
+<h1>Legado</h1>
+
+<p>
+  Tela placeholder servida pelo <code>legacy-front</code> (AngularJS 1.5.11,
+  sem build step). Toda rota que a borda nao reconhecer cai aqui: o legado e o
+  <em>default</em> do URL map.
+</p>
+
+<p>
+  Runtime da API do legado: <code>{{ vm.runtime || '...' }}</code><br>
+  Atendido por: <code>{{ vm.source || '...' }}</code>
+</p>
+
+<p ng-if="vm.error" class="badge badge-legacy">{{ vm.error }}</p>

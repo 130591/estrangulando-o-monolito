@@ -1,0 +1,31 @@
+node_modules/
+
+# apps/legacy-front/public/vendor NAO entra aqui: os .js do AngularJS sao
+# commitados para o legado subir sem install.
+
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+*.tfvars
+!*.tfvars.example
+
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

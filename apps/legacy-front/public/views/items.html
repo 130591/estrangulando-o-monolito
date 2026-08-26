@@ -1,0 +1,19 @@
+<h1>Items</h1>
+
+<p>
+  Esta tela chama <code>/api/example/items</code>. Quem responde depende do URL
+  map da borda, nao do front: e exatamente esse desvio que caracteriza o
+  estrangulamento da rota.
+</p>
+
+<p>Atendido por: <code>{{ vm.source || '...' }}</code></p>
+
+<table ng-if="vm.items.length">
+  <tr><th>id</th><th>name</th></tr>
+  <tr ng-repeat="item in vm.items">
+    <td>{{ item.id }}</td>
+    <td>{{ item.name }}</td>
+  </tr>
+</table>
+
+<p ng-if="vm.error" class="badge badge-legacy">{{ vm.error }}</p>

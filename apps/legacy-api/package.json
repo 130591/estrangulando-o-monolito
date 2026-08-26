@@ -1,0 +1,19 @@
+{
+  "name": "legacy-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API monolitica do legado. Roda em Node 9 (EOL) de proposito - ver docs/adr/0001.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "lint": "echo \"legacy-api: sem linter (toolchain moderno nao roda em Node 9)\" && exit 0",
+    "test": "echo \"legacy-api: sem testes no boilerplate\" && exit 0"
+  },
+  "engines": {
+    "node": "9.x"
+  },
+  "dependencies": {
+    "express": "4.16.4"
+  },
+  "license": "UNLICENSED"
+}

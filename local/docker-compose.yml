@@ -1,0 +1,139 @@
+name: estrangulando-o-monolito
+
+services:
+  # Unico servico com porta publicada: representa o Application Load Balancer.
+  edge:
+    image: nginx:1.27-alpine
+    container_name: edge
+    ports:
+      - "${EDGE_PORT:-8080}:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      legacy-front:
+        condition: service_healthy
+      legacy-api:
+        condition: service_healthy
+      new-front:
+        condition: service_healthy
+      new-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/_edge/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Vira Cloud SQL for MySQL no GCP. Compartilhado entre legado e new-service
+  # durante a coexistencia: separar os dados e uma migracao a parte.
+  mysql:
+    image: mysql:8.4
+    container_name: mysql
+    command: --default-authentication-plugin=caching_sha2_password
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-app}"
+      MYSQL_USER: "${MYSQL_USER:-app}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-app}"
+    ports:
+      # Conveniencia local. Cloud SQL nao tem IP publico: o acesso e por
+      # private IP ou Cloud SQL Auth Proxy.
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # Node 9 (EOL). Sem `ports:` de proposito - ver docs/adr/0001.
+  legacy-api:
+    build:
+      context: ../apps/legacy-api
+    container_name: legacy-api
+    environment:
+      PORT: "8080"
+      DB_HOST: "mysql"
+      DB_PORT: "3306"
+      DB_NAME: "${MYSQL_DATABASE:-app}"
+      DB_USER: "${MYSQL_USER:-app}"
+      DB_PASSWORD: "${MYSQL_PASSWORD:-app}"
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      # node:9-slim nao tem curl nem wget.
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:8080/healthz',function(r){process.exit(r.statusCode===200?0:1)}).on('error',function(){process.exit(1)})"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  legacy-front:
+    build:
+      context: ../apps/legacy-front
+    container_name: legacy-front
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  new-service:
+    build:
+      context: ../apps/new-service
+    container_name: new-service
+    environment:
+      NODE_ENV: "${NODE_ENV:-development}"
+      PORT: "8080"
+      ROUTE_PREFIX: "${NEW_SERVICE_ROUTE_PREFIX:-api}"
+      SERVICE_NAME: "new-service"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      DB_HOST: "mysql"
+      DB_PORT: "3306"
+      DB_NAME: "${MYSQL_DATABASE:-app}"
+      DB_USER: "${MYSQL_USER:-app}"
+      DB_PASSWORD: "${MYSQL_PASSWORD:-app}"
+    expose:
+      - "8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://127.0.0.1:8080/healthz',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  new-front:
+    build:
+      context: ../apps/new-front
+      args:
+        VITE_BASE_PATH: "${NEW_FRONT_BASE_PATH:-/new/}"
+        VITE_API_BASE_URL: "${NEW_FRONT_API_BASE_URL:-/api/example}"
+    container_name: new-front
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql-data:

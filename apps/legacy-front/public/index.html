@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br" ng-app="legacyApp">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>legacy-front</title>
+
+  <!-- html5Mode exige <base href>, e ele tem que casar com o path em que a
+       borda publica este front. -->
+  <base href="/">
+
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="topbar">
+    <strong>legacy-front</strong>
+    <span class="badge badge-legacy">AngularJS 1.5.11</span>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/items">Items</a>
+    </nav>
+  </header>
+
+  <main ng-view></main>
+
+  <script src="vendor/angular.min.js"></script>
+  <script src="vendor/angular-route.min.js"></script>
+
+  <script src="app.js"></script>
+  <script src="views/home.controller.js"></script>
+  <script src="views/items.controller.js"></script>
+</body>
+</html>

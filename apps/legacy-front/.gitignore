@@ -1,0 +1,4 @@
+node_modules/
+
+# public/vendor NAO entra aqui: os .js copiados sao commitados de proposito,
+# para o front subir sem nenhum install (ver scripts/vendor.js).
