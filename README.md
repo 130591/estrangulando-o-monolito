@@ -122,6 +122,58 @@ apontar para ela. A migração inteira cabe nesse diff.
 
 ---
 
+## O aplicativo: dev notes
+
+Uma demonstração de Strangler precisa de algo para estrangular. O repo serve um
+app real — **dev notes**, um read-later com tags e perfil público — implementado
+**por inteiro dos dois lados**, sobre **o mesmo banco e as mesmas tabelas**.
+
+| Tela | O que faz |
+|---|---|
+| Landing | hero, captura de e-mail e vitrine com notas públicas reais |
+| Entrar / criar conta | e-mail + senha, JWT |
+| Dashboard | grade de notas, busca, filtro por tag, modal de criar/editar, arquivar |
+| Arquivadas | as mesmas notas, fora do caminho |
+| Perfil público | `/<username>`, sem sessão, só o que é público |
+
+As duas implementações são independentes e equivalentes: mesmas rotas, mesmo
+envelope de resposta, mesmos códigos de erro, mesmo layout pixel a pixel. É essa
+equivalência que torna o corte uma decisão de roteamento, e não uma migração.
+
+### Sessão que atravessa o corte
+
+Os dois backends assinam o JWT com **o mesmo segredo** (`JWT_SECRET`), o mesmo
+`iss`/`aud` e HS256. Um token emitido pelo monólito é aceito pelo serviço novo e
+vice-versa. Os dois fronts guardam o token na **mesma chave** de `localStorage`
+(`devnotes.token`) e, atrás da borda, estão na mesma origem — então quem entra em
+`/` continua logado em `/new/`.
+
+É o antídoto direto para a "sessão dividida" que este README lista como o
+problema que mais atrasa o primeiro corte real. O claim `via` guarda quem emitiu
+o token e aparece no menu da conta: dá para ver, na tela, de que lado a sessão
+nasceu.
+
+### O corte, quando acontecer
+
+O URL map ainda está na etapa 0: `local/nginx/nginx.conf` é um `server {}` vazio,
+com os TODOs de sempre. O app está pronto dos dois lados, mas **nada está
+roteado** — é a borda que falta, não o código.
+
+Quando ela existir, mover uma rota é uma `location` a mais:
+
+```nginx
+location /api/notes {
+  proxy_pass http://new-service:8080;
+}
+```
+
+Nada mais muda. A sessão continua valendo (mesmo segredo de JWT), as notas são as
+mesmas linhas do mesmo banco, e o campo `source` de toda resposta passa a dizer
+`new-service`. Remover a `location` é o rollback — literalmente a linha que o topo
+deste README promete.
+
+---
+
 ## Stacks
 
 O contraste entre os dois lados é intencional e faz parte da demonstração.
@@ -131,6 +183,8 @@ O contraste entre os dois lados é intencional e faz parte da demonstração.
 | Runtime | Node 9 (EOL) | Node 22 |
 | Backend | Express 4, CommonJS | NestJS + TypeScript |
 | Front | AngularJS 1.5 | React + Vite |
+| Driver do banco | `mysql` 2.x (callbacks) | `mysql2/promise` |
+| Auth | `jsonwebtoken` + `bcryptjs` | `@nestjs/jwt` + Passport + `bcryptjs` |
 | Dependências do front | `/vendor` commitado | build com assets hasheados |
 | Hospedagem | VM + nginx | Cloud Run + backend bucket |
 
@@ -161,9 +215,17 @@ Nenhuma arquitetura é de graça. Os custos reais desta:
   duplicados, e o time mantendo os dois. O Strangler troca risco por tempo e
   duplicação.
 - **Sessão dividida.** Cookie do monólito e token do serviço novo precisam
-  conviver. É o problema que mais atrasa o primeiro corte real.
+  conviver. É o problema que mais atrasa o primeiro corte real. Aqui está
+  resolvido com segredo de JWT compartilhado (ver *Sessão que atravessa o
+  corte*), o que troca o problema por um acoplamento: girar o segredo vira uma
+  operação coordenada entre os dois lados.
 - **Banco compartilhado.** O serviço novo não é autônomo enquanto compartilhar
-  schema e migrations com o legado.
+  schema e migrations com o legado. E o custo não para no schema: o driver
+  `mysql` 2.x, único que roda em Node 9, não fala `caching_sha2_password`, então
+  **o banco inteiro** é forçado a `mysql_native_password` — um plugin que o MySQL
+  8.4 já entrega desligado e que o MySQL 9 removeu. O lado mais velho da
+  coexistência dita a configuração do recurso compartilhado, e essa conta só é
+  paga quando a VM morre.
 - **Granularidade do URL map.** A borda roteia por path, não por regra de
   negócio. Migrar meio prefixo produz um mapa frágil.
 - **Cold start.** Cloud Run parte do zero; a VM está sempre quente. `minScale`
@@ -187,6 +249,25 @@ make logs
 make down
 ```
 
+O schema e o seed sobem junto com o MySQL, e o dev notes já nasce com uma conta:
+
+| | |
+|---|---|
+| conta de demonstração | `mariana@devnotes.app` · `devnotes` |
+
+**A borda ainda não roteia nada** (etapa 0), então não há endereço único que
+sirva o app: os fronts sobem, mas nenhum deles alcança `/api` até o URL map
+existir. Escrever esse mapa é o próximo passo, e os TODOs em
+`local/nginx/nginx.conf` dizem quais rotas ele precisa cobrir.
+
+O schema e o seed ficam em `local/mysql/init/` e rodam na primeira subida do
+volume. Depois de mexer no SQL:
+
+```bash
+docker compose -f local/docker-compose.yml down --volumes
+docker compose -f local/docker-compose.yml up -d
+```
+
 Terraform fica em `infra/terraform`, validável sem aplicar:
 
 ```bash
@@ -204,10 +285,20 @@ apps/
   new-service     NestJS · TypeScript · Node 22
   new-front       React · Vite
 infra/terraform/  network · vm · cloudrun · backend-bucket · load-balancer
-local/            docker-compose + nginx (o "URL map local")
+local/
+  docker-compose.yml
+  nginx/          o "URL map local" (é aqui que se muda o dono da rota)
+  mysql/init/     schema + seed, compartilhados pelos dois backends
 docs/adr/         decisões arquiteturais
 scripts/
 ```
+
+O CSS do dev notes é **byte a byte idêntico** em `legacy-front/public/app.css` e
+`new-front/src/styles.css`. Não é descuido: as duas telas têm que sair iguais
+enquanto a borda move rota por rota, e um pacote compartilhado criaria
+acoplamento de build entre um front com build step e outro sem nenhum. É a
+"duplicação de componentes" da seção de trade-offs — deliberada, e anotada no
+cabeçalho dos dois arquivos.
 
 ---
 
