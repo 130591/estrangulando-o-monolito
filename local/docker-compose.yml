@@ -1,7 +1,7 @@
 name: estrangulando-o-monolito
 
 services:
-  # Unico servico com porta publicada: representa o Application Load Balancer.
+  # Representa o Application Load Balancer: e por aqui que o roteamento passa.
   edge:
     image: nginx:1.27-alpine
     container_name: edge
@@ -29,7 +29,13 @@ services:
   mysql:
     image: mysql:8.4
     container_name: mysql
-    command: --default-authentication-plugin=caching_sha2_password
+    # O driver `mysql` 2.x, unico que roda em Node 9, so fala
+    # mysql_native_password: com o default do 8.4 o legado responde
+    # ER_NOT_SUPPORTED_AUTH_MODE em toda query. O lado mais velho dita a
+    # configuracao do banco compartilhado - e o MySQL 9 ja removeu o plugin.
+    command: >-
+      --mysql-native-password=ON
+      --authentication-policy=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-root}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-app}"
@@ -41,6 +47,9 @@ services:
       - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
+      # So rodam na primeira subida do volume; para reaplicar depois de
+      # mexer no SQL, derrube com `down --volumes`.
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -60,6 +69,9 @@ services:
       DB_NAME: "${MYSQL_DATABASE:-app}"
       DB_USER: "${MYSQL_USER:-app}"
       DB_PASSWORD: "${MYSQL_PASSWORD:-app}"
+      # O MESMO do new-service: e o que faz o token emitido aqui valer la.
+      JWT_SECRET: "${JWT_SECRET:-dev-notes-segredo-local-nao-use-em-producao}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
     expose:
       - "8080"
     depends_on:
@@ -81,8 +93,8 @@ services:
     build:
       context: ../apps/legacy-front
     container_name: legacy-front
-    expose:
-      - "8080"
+    ports:
+      - "${LEGACY_FRONT_PORT:-8081}:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
@@ -104,6 +116,9 @@ services:
       DB_NAME: "${MYSQL_DATABASE:-app}"
       DB_USER: "${MYSQL_USER:-app}"
       DB_PASSWORD: "${MYSQL_PASSWORD:-app}"
+      # Identico ao do legacy-api: divergir desloga todo mundo no desvio.
+      JWT_SECRET: "${JWT_SECRET:-dev-notes-segredo-local-nao-use-em-producao}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
     expose:
       - "8080"
     depends_on:
@@ -125,10 +140,11 @@ services:
       context: ../apps/new-front
       args:
         VITE_BASE_PATH: "${NEW_FRONT_BASE_PATH:-/new/}"
-        VITE_API_BASE_URL: "${NEW_FRONT_API_BASE_URL:-/api/example}"
+        VITE_API_BASE_URL: "${NEW_FRONT_API_BASE_URL:-/api}"
     container_name: new-front
-    expose:
-      - "8080"
+    # Atalho de debug: o caminho normal e pela borda.
+    ports:
+      - "${NEW_FRONT_PORT:-8082}:8080"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 10s
