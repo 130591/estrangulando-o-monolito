@@ -1,0 +1,87 @@
+<!-- Clique no fundo fecha; clique dentro do painel nao pode borbulhar ate aqui. -->
+<div class="dn-overlay" ng-click="vm.onClose()">
+  <div class="dn-modal" ng-click="$event.stopPropagation()">
+    <div class="dn-modal__head">
+      <span class="dn-modal__title">{{ vm.isEdit() ? 'Editar nota' : 'Adicionar nota' }}</span>
+      <button type="button" class="dn-modal__close" aria-label="Fechar" ng-click="vm.onClose()">&#10005;</button>
+    </div>
+
+    <form name="noteForm" novalidate ng-submit="vm.submit()">
+      <div class="dn-modal__body">
+        <p class="dn-form-error" ng-if="vm.error">{{ vm.error }}</p>
+
+        <div class="dn-field">
+          <label class="dn-field__label" for="dn-url">URL</label>
+          <input id="dn-url"
+                 class="dn-field__control dn-field__control--mono"
+                 type="text"
+                 placeholder="https://"
+                 ng-model="vm.form.url">
+        </div>
+
+        <div class="dn-field">
+          <label class="dn-field__label" for="dn-title">TÍTULO</label>
+          <input id="dn-title"
+                 class="dn-field__control"
+                 type="text"
+                 placeholder="Como você quer lembrar disso"
+                 ng-model="vm.form.title">
+        </div>
+
+        <div class="dn-field">
+          <label class="dn-field__label">TAG</label>
+          <div class="dn-tagpicker">
+            <button type="button"
+                    class="dn-tagopt"
+                    ng-repeat="tag in vm.tagList track by tag.id"
+                    ng-style="vm.tagOptionStyle(tag)"
+                    ng-click="vm.selectTag(tag.name)">{{ tag.name }}</button>
+
+            <input class="dn-newtag"
+                   type="text"
+                   placeholder="+ nova tag"
+                   aria-label="Nova tag"
+                   ng-model="vm.form.newTag">
+          </div>
+        </div>
+
+        <div class="dn-field">
+          <label class="dn-field__label" for="dn-note">ANOTAÇÃO <span>(opcional)</span></label>
+          <textarea id="dn-note"
+                    class="dn-field__control"
+                    rows="3"
+                    placeholder="Por que isso importa pra você?"
+                    ng-model="vm.form.note"></textarea>
+        </div>
+      </div>
+
+      <div class="dn-modal__foot">
+        <div class="dn-modal__actions">
+          <button type="button" class="dn-vis" ng-click="vm.toggleVisibility()">
+            <span class="dn-vis__dot" ng-class="{ 'is-public': vm.form.visibility === 'public' }"></span>
+            {{ vm.visibilityLabel() }}
+          </button>
+
+          <!-- Arquivar e excluir so existem na edicao: nao ha o que arquivar
+               numa nota que ainda nao foi salva. -->
+          <button type="button"
+                  class="dn-btn dn-btn--mono"
+                  ng-if="vm.isEdit()"
+                  ng-click="vm.onArchive()">{{ vm.note.archived ? 'Desarquivar' : 'Arquivar' }}</button>
+
+          <button type="button"
+                  class="dn-btn dn-btn--mono"
+                  ng-if="vm.isEdit()"
+                  ng-click="vm.onDelete()">Excluir</button>
+        </div>
+
+        <div class="dn-modal__actions">
+          <button type="button" class="dn-btn dn-btn--quiet" ng-click="vm.onClose()">Cancelar</button>
+          <button type="submit" class="dn-btn dn-btn--primary" ng-disabled="vm.saving">
+            {{ vm.saving ? 'Salvando...' : 'Salvar nota' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

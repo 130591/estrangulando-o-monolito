@@ -1,0 +1,75 @@
+<div class="dn-auth dn-mesh">
+  <a href="/"><dn-brand></dn-brand></a>
+
+  <form class="dn-auth__card" novalidate ng-submit="vm.submit()">
+    <div>
+      <h1 class="dn-auth__title">{{ vm.isRegister() ? 'Criar conta' : 'Entrar' }}</h1>
+      <p class="dn-auth__lead">
+        {{ vm.isRegister()
+            ? 'Sua lista de estudos, com um perfil público no fim.'
+            : 'Bem-vindo de volta. Suas notas estão onde você deixou.' }}
+      </p>
+    </div>
+
+    <p class="dn-form-error" ng-if="vm.error">{{ vm.error }}</p>
+
+    <div class="dn-field">
+      <label class="dn-field__label" for="dn-email">E-MAIL</label>
+      <input id="dn-email"
+             class="dn-field__control dn-field__control--mono"
+             type="email"
+             autocomplete="email"
+             placeholder="voce@email.com"
+             ng-model="vm.form.email">
+    </div>
+
+    <div class="dn-field" ng-if="vm.isRegister()">
+      <label class="dn-field__label" for="dn-name">NOME</label>
+      <input id="dn-name"
+             class="dn-field__control"
+             type="text"
+             autocomplete="name"
+             placeholder="Mariana Souza"
+             ng-model="vm.form.name">
+    </div>
+
+    <div class="dn-field" ng-if="vm.isRegister()">
+      <label class="dn-field__label" for="dn-username">USERNAME <span>(vira devnotes.app/seu-nome)</span></label>
+      <input id="dn-username"
+             class="dn-field__control dn-field__control--mono"
+             type="text"
+             autocapitalize="none"
+             autocomplete="username"
+             placeholder="mariana"
+             ng-model="vm.form.username">
+    </div>
+
+    <div class="dn-field">
+      <label class="dn-field__label" for="dn-password">
+        SENHA <span ng-if="vm.isRegister()">(mínimo 8)</span>
+      </label>
+      <input id="dn-password"
+             class="dn-field__control"
+             type="password"
+             ng-attr-autocomplete="{{ vm.isRegister() ? 'new-password' : 'current-password' }}"
+             placeholder="••••••••"
+             ng-model="vm.form.password">
+    </div>
+
+    <button type="submit" class="dn-btn dn-btn--primary dn-btn--block" ng-disabled="vm.saving">
+      {{ vm.saving ? 'Entrando...' : (vm.isRegister() ? 'Criar conta' : 'Entrar') }}
+    </button>
+
+    <p class="dn-auth__switch">
+      {{ vm.isRegister() ? 'já tem conta?' : 'ainda não tem conta?' }}
+      <button type="button" ng-click="vm.switchMode()">{{ vm.isRegister() ? 'entrar' : 'criar uma' }}</button>
+    </p>
+
+    <!-- A conta do seed. Este repo e um laboratorio: quem clona precisa
+         conseguir abrir o dashboard sem cadastrar nada. -->
+    <p class="dn-auth__seed" ng-if="!vm.isRegister()">
+      conta de demonstração<br>
+      <strong>mariana@devnotes.app</strong> · <strong>devnotes</strong>
+    </p>
+  </form>
+</div>

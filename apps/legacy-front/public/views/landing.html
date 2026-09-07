@@ -1,0 +1,62 @@
+<div class="dn-landing dn-mesh">
+  <header class="dn-landing__header">
+    <a href="/"><dn-brand></dn-brand></a>
+
+    <div class="dn-landing__nav">
+      <a href="#docs">Docs</a>
+      <a href="#changelog">Changelog</a>
+      <button type="button" class="dn-btn dn-btn--ghost" ng-click="vm.enter()">
+        {{ vm.isAuthenticated ? 'Minhas notas' : 'Entrar' }}
+      </button>
+    </div>
+  </header>
+
+  <main class="dn-hero">
+    <div class="dn-badge">
+      <span class="dn-badge__dot"></span>
+      v0.1 — sem IA, sem mágica
+    </div>
+
+    <h1 class="dn-hero__title">
+      A read-later list<br><span>que você realmente lê.</span>
+    </h1>
+
+    <p class="dn-hero__lead">
+      Salve artigos, vídeos e docs. Organize por tags. Publique sua lista de
+      estudos em um perfil que dá vontade de compartilhar.
+    </p>
+
+    <form class="dn-hero__cta" ng-submit="vm.start()">
+      <div class="dn-hero__row">
+        <input class="dn-input dn-input--mono"
+               type="email"
+               placeholder="voce@email.com"
+               aria-label="Seu e-mail"
+               ng-model="vm.email">
+        <button type="submit" class="dn-btn dn-btn--primary">Começar</button>
+      </div>
+      <span class="dn-hero__hint">e-mail e senha · sem cartão · sem IA</span>
+    </form>
+
+    <!-- Some quando a base nao tem o perfil da vitrine: melhor sem moldura do
+         que com moldura vazia. -->
+    <div class="dn-preview" ng-if="vm.preview.length">
+      <div class="dn-preview__bar">
+        <span class="dn-preview__dot"></span>
+        <span class="dn-preview__dot"></span>
+        <span class="dn-preview__dot"></span>
+        <span class="dn-preview__url">devnotes.app/{{ vm.showcase }}</span>
+      </div>
+
+      <div class="dn-preview__grid">
+        <div class="dn-preview__card" ng-repeat="note in vm.preview track by note.id">
+          <div class="dn-preview__meta">
+            <span class="dn-mark">{{ note.mark }}</span>
+            <span class="dn-domain">{{ note.domain }}</span>
+          </div>
+          <div class="dn-preview__title">{{ note.title }}</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

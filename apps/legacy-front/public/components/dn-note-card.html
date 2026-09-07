@@ -1,0 +1,20 @@
+<button type="button" class="dn-card" ng-click="vm.select()">
+  <div class="dn-card__top">
+    <div class="dn-card__ident">
+      <span class="dn-mark dn-mark--solid">{{ vm.note.mark }}</span>
+      <span class="dn-domain">{{ vm.note.domain }}</span>
+    </div>
+    <span class="dn-card__vis">{{ vm.visibilityLabel }}</span>
+  </div>
+
+  <div class="dn-card__body">
+    <h3 class="dn-card__title">{{ vm.note.title }}</h3>
+    <p class="dn-card__note" ng-if="vm.note.note">{{ vm.note.note }}</p>
+  </div>
+
+  <div class="dn-card__foot">
+    <span class="dn-tag" ng-if="vm.note.tag" ng-style="vm.tagStyle">{{ vm.note.tag.name }}</span>
+    <span ng-if="!vm.note.tag"></span>
+    <span class="dn-card__date">{{ vm.dateLabel }}</span>
+  </div>
+</button>

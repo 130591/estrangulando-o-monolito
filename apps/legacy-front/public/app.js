@@ -1,52 +1,86 @@
 (function () {
-  'use strict';
+  'use strict'
 
   angular
-    .module('legacyApp', ['ngRoute'])
-    .constant('API_BASE', '/api/example')
-    .config(configure)
-    .factory('requestIdInterceptor', requestIdInterceptor)
-    .config(registerInterceptor);
+    .module('devNotesApp', ['ngRoute'])
+    .constant('API_BASE', '/api')
+    .constant('SHOWCASE_USERNAME', 'mariana')
+    .config(configureRoutes)
+    .config(registerInterceptor)
+    .run(guardRoutes)
 
-  configure.$inject = ['$routeProvider', '$locationProvider'];
-  function configure($routeProvider, $locationProvider) {
+  configureRoutes.$inject = ['$routeProvider', '$locationProvider']
+  function configureRoutes($routeProvider, $locationProvider) {
     // URLs sem "#": exige try_files no servidor, senao F5 fora da raiz da 404.
-    $locationProvider.html5Mode(true);
+    $locationProvider.html5Mode(true)
 
     $routeProvider
       .when('/', {
-        templateUrl: 'views/home.html',
-        controller: 'HomeController',
+        templateUrl: 'views/landing.html',
+        controller: 'LandingController',
         controllerAs: 'vm'
       })
-      .when('/items', {
-        templateUrl: 'views/items.html',
-        controller: 'ItemsController',
+      .when('/entrar', {
+        templateUrl: 'views/auth.html',
+        controller: 'AuthController',
         controllerAs: 'vm'
       })
-      .otherwise({ redirectTo: '/' });
+      .when('/notas', {
+        templateUrl: 'views/dashboard.html',
+        controller: 'DashboardController',
+        controllerAs: 'vm',
+        requiresAuth: true,
+        archived: false,
+        resolve: { currentUser: resolveCurrentUser }
+      })
+      .when('/arquivadas', {
+        templateUrl: 'views/dashboard.html',
+        controller: 'DashboardController',
+        controllerAs: 'vm',
+        requiresAuth: true,
+        archived: true,
+        resolve: { currentUser: resolveCurrentUser }
+      })
+      // Por ultimo: o ngRoute casa na ordem de registro, entao /notas viraria
+      // perfil se esta rota viesse antes. A lista de reservados fecha o resto.
+      .when('/:username', {
+        templateUrl: 'views/profile.html',
+        controller: 'ProfileController',
+        controllerAs: 'vm'
+      })
+      .otherwise({ redirectTo: '/' })
   }
 
-  requestIdInterceptor.$inject = [];
-  function requestIdInterceptor() {
-    return {
-      request: function (config) {
-        config.headers['x-request-id'] = uuidv4();
-        return config;
-      }
-    };
-
-    function uuidv4() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = (Math.random() * 16) | 0;
-        var v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-      });
-    }
+  // Resolve antes do template: sem isso o cabecalho pisca com /undefined
+  // enquanto o /auth/me nao volta.
+  resolveCurrentUser.$inject = ['$q', 'session']
+  function resolveCurrentUser($q, session) {
+    return session.hydrate().then(function (user) {
+      return user || $q.reject('sessao_invalida')
+    })
   }
 
-  registerInterceptor.$inject = ['$httpProvider'];
+  registerInterceptor.$inject = ['$httpProvider']
   function registerInterceptor($httpProvider) {
-    $httpProvider.interceptors.push('requestIdInterceptor');
+    $httpProvider.interceptors.push('authInterceptor')
   }
-})();
+
+  // Barrar no $routeChangeStart evita o flash do dashboard vazio para quem nao
+  // esta logado.
+  guardRoutes.$inject = ['$rootScope', '$location', 'session']
+  function guardRoutes($rootScope, $location, session) {
+    $rootScope.$on('$routeChangeStart', function (event, next) {
+      if (!next || !next.$$route || !next.$$route.requiresAuth) return
+      if (session.isAuthenticated()) return
+
+      event.preventDefault()
+      session.setReturnTo($location.path())
+      $location.path('/entrar')
+    })
+
+    $rootScope.$on('$routeChangeError', function () {
+      session.logout()
+      $location.path('/entrar')
+    })
+  }
+})()

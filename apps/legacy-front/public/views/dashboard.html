@@ -1,0 +1,72 @@
+<div>
+  <dn-app-header user="vm.user"
+                 via="vm.via"
+                 active="{{ vm.active }}"
+                 on-add="vm.openCreate()"
+                 on-logout="vm.logout()"></dn-app-header>
+
+  <main class="dn-main">
+    <div class="dn-page-head">
+      <div>
+        <h1 class="dn-page-head__title">{{ vm.title }}</h1>
+        <p class="dn-page-head__count">{{ vm.countLabel }}</p>
+      </div>
+
+      <div class="dn-search">
+        <span class="dn-search__slash">/</span>
+        <!-- debounce: sem ele cada tecla vira uma request. -->
+        <input class="dn-search__input"
+               type="search"
+               placeholder="Buscar por título ou tag"
+               aria-label="Buscar notas"
+               ng-model="vm.query"
+               ng-model-options="{ debounce: 250 }"
+               ng-change="vm.reload()">
+      </div>
+    </div>
+
+    <div class="dn-filters">
+      <button type="button"
+              class="dn-filter"
+              ng-repeat="name in vm.filters track by name"
+              ng-class="{ 'is-active': vm.isFilterActive(name) }"
+              ng-click="vm.setFilter(name)">{{ name }}</button>
+    </div>
+
+    <p class="dn-note-error" ng-if="vm.error">{{ vm.error }}</p>
+
+    <!-- Esqueleto com a altura do card: a grade nao pula quando os dados
+         chegam. -->
+    <div class="dn-grid" ng-if="vm.loading && !vm.notes.length">
+      <div class="dn-skeleton"></div>
+      <div class="dn-skeleton"></div>
+      <div class="dn-skeleton"></div>
+    </div>
+
+    <div class="dn-grid" ng-if="vm.notes.length">
+      <dn-note-card ng-repeat="note in vm.notes track by note.id"
+                    note="note"
+                    on-select="vm.openNote(note)"></dn-note-card>
+    </div>
+
+    <div class="dn-empty" ng-if="!vm.loading && !vm.notes.length && !vm.error">
+      <strong ng-if="vm.archived">Nada arquivado</strong>
+      <strong ng-if="!vm.archived && (vm.query || vm.filter !== 'Tudo')">Nenhuma nota com esse filtro</strong>
+      <strong ng-if="!vm.archived && !vm.query && vm.filter === 'Tudo'">Sua lista começa aqui</strong>
+
+      <span ng-if="vm.archived">Notas arquivadas somem do dashboard sem serem apagadas.</span>
+      <span ng-if="!vm.archived && (vm.query || vm.filter !== 'Tudo')">Tente outra busca ou volte para “Tudo”.</span>
+      <span ng-if="!vm.archived && !vm.query && vm.filter === 'Tudo'">Cole um link em “Adicionar nota” e diga por que ele importa.</span>
+    </div>
+  </main>
+
+  <dn-note-modal ng-if="vm.modal.open"
+                 note="vm.modal.note"
+                 tags="vm.tagList"
+                 saving="vm.modal.saving"
+                 error="vm.modal.error"
+                 on-save="vm.save(payload)"
+                 on-close="vm.closeModal()"
+                 on-archive="vm.toggleArchive()"
+                 on-delete="vm.remove()"></dn-note-modal>
+</div>

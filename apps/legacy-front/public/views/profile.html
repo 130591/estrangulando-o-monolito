@@ -1,0 +1,74 @@
+<div class="dn-profile">
+  <div class="dn-profile__bar">
+    <div class="dn-profile__bar-inner">
+      <a href="/"><dn-brand size="xs"></dn-brand></a>
+
+      <button type="button" class="dn-btn dn-btn--ghost" ng-click="vm.enter()">
+        {{ vm.isOwner ? 'Minhas notas' : (vm.isAuthenticated ? 'Minhas notas' : 'Criar meu perfil') }}
+      </button>
+    </div>
+  </div>
+
+  <main class="dn-profile__main">
+    <div ng-if="vm.loading">
+      <div class="dn-skeleton dn-skeleton--row"></div>
+      <div class="dn-skeleton dn-skeleton--row"></div>
+      <div class="dn-skeleton dn-skeleton--row"></div>
+    </div>
+
+    <div class="dn-empty" ng-if="!vm.loading && vm.notFound">
+      <strong>/{{ vm.username }} não existe</strong>
+      <span>Nenhum perfil publicou nesse endereço.</span>
+    </div>
+
+    <div ng-if="!vm.loading && vm.profile">
+      <div class="dn-profile__head">
+        <span class="dn-avatar dn-avatar--lg">{{ vm.profile.initials }}</span>
+
+        <div class="dn-profile__id">
+          <h1 class="dn-profile__name">{{ vm.profile.name }}</h1>
+          <p class="dn-profile__handle">{{ vm.handle }}</p>
+          <p class="dn-profile__bio" ng-if="vm.profile.bio">{{ vm.profile.bio }}</p>
+        </div>
+
+        <button type="button"
+                class="dn-copy"
+                ng-class="{ 'is-copied': vm.copied }"
+                ng-click="vm.copyLink()">{{ vm.copied ? '✓ Link copiado' : 'Copiar link' }}</button>
+      </div>
+
+      <!-- O terceiro numero e "desde" e nao "seguidores": nao existe follow
+           neste app, e um contador inventado seria mentira na tela. -->
+      <div class="dn-stats">
+        <span><strong>{{ vm.stats.publicNotes }}</strong> {{ vm.stats.publicNotes === 1 ? 'nota pública' : 'notas públicas' }}</span>
+        <span><strong>{{ vm.stats.tags }}</strong> {{ vm.stats.tags === 1 ? 'tag' : 'tags' }}</span>
+        <span>desde <strong>{{ vm.since }}</strong></span>
+      </div>
+
+      <div class="dn-list" ng-if="vm.notes.length">
+        <a class="dn-list__row"
+           ng-repeat="note in vm.notes track by note.id"
+           ng-attr-href="{{ note.url || undefined }}"
+           ng-attr-target="{{ note.url ? '_blank' : undefined }}"
+           rel="noopener noreferrer">
+          <span class="dn-mark dn-mark--solid">{{ note.mark }}</span>
+
+          <div class="dn-list__body">
+            <div class="dn-list__title">{{ note.title }}</div>
+            <div class="dn-list__note" ng-if="note.note">{{ note.note }}</div>
+          </div>
+
+          <span class="dn-tag" ng-if="note.tag" ng-style="vm.tagStyle(note.tag)">{{ note.tag.name }}</span>
+          <span class="dn-list__date">{{ vm.dateLabel(note.createdAt) }}</span>
+        </a>
+      </div>
+
+      <div class="dn-empty" ng-if="!vm.notes.length">
+        <strong>Nada público ainda</strong>
+        <span>{{ vm.profile.name }} ainda não publicou nenhuma nota.</span>
+      </div>
+
+      <p class="dn-profile__footer">feito com dev notes — sem IA, só links bons</p>
+    </div>
+  </main>
+</div>

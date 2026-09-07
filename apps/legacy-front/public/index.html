@@ -1,33 +1,49 @@
 <!DOCTYPE html>
-<html lang="pt-br" ng-app="legacyApp">
+<html lang="pt-br" ng-app="devNotesApp">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>legacy-front</title>
+  <title>dev notes</title>
+  <meta name="description" content="Salve artigos, videos e docs. Organize por tags. Publique sua lista de estudos.">
 
   <!-- html5Mode exige <base href>, e ele tem que casar com o path em que a
        borda publica este front. -->
   <base href="/">
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <header class="topbar">
-    <strong>legacy-front</strong>
-    <span class="badge badge-legacy">AngularJS 1.5.11</span>
-    <nav>
-      <a href="/">Home</a>
-      <a href="/items">Items</a>
-    </nav>
-  </header>
-
-  <main ng-view></main>
+  <!-- Todo o app vive dentro do ng-view: nao ha binding fora dele, entao nao
+       ha flash de {{ }} para esconder com ng-cloak. -->
+  <div ng-view></div>
 
   <script src="vendor/angular.min.js"></script>
   <script src="vendor/angular-route.min.js"></script>
 
+  <!-- Sem bundler: a ordem e a dependencia. Modulo, depois core, depois
+       componentes, depois as telas. -->
   <script src="app.js"></script>
-  <script src="views/home.controller.js"></script>
-  <script src="views/items.controller.js"></script>
+
+  <script src="core/api.service.js"></script>
+  <script src="core/session.service.js"></script>
+  <script src="core/auth.interceptor.js"></script>
+  <script src="core/notes.service.js"></script>
+  <script src="core/tags.service.js"></script>
+  <script src="core/profiles.service.js"></script>
+  <script src="core/format.service.js"></script>
+
+  <script src="components/dn-brand.component.js"></script>
+  <script src="components/dn-app-header.component.js"></script>
+  <script src="components/dn-note-card.component.js"></script>
+  <script src="components/dn-note-modal.component.js"></script>
+
+  <script src="views/landing.controller.js"></script>
+  <script src="views/auth.controller.js"></script>
+  <script src="views/dashboard.controller.js"></script>
+  <script src="views/profile.controller.js"></script>
 </body>
 </html>
