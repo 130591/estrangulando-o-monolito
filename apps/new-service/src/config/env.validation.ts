@@ -1,5 +1,5 @@
 import { plainToInstance, Type } from 'class-transformer'
-import { IsEnum, IsInt, IsString, Max, Min, validateSync } from 'class-validator'
+import { IsEnum, IsInt, IsString, Max, Min, MinLength, validateSync } from 'class-validator'
 
 export enum NodeEnv {
   Development = 'development',
@@ -33,16 +33,49 @@ export class EnvironmentVariables {
 
   @IsEnum(LogLevel)
   LOG_LEVEL!: LogLevel
+
+  @IsString()
+  DB_HOST!: string
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(65535)
+  DB_PORT!: number
+
+  @IsString()
+  DB_NAME!: string
+
+  @IsString()
+  DB_USER!: string
+
+  @IsString()
+  DB_PASSWORD!: string
+
+  // Sem default: segredo com valor de fabrica e pior que nenhum. E o mesmo do
+  // legacy-api de proposito.
+  @IsString()
+  @MinLength(16)
+  JWT_SECRET!: string
+
+  @IsString()
+  JWT_EXPIRES_IN!: string
 }
 
-// Defaults aplicados antes do plainToInstance: nao depender de como o
-// class-transformer trata property initializers.
-const DEFAULTS: Record<keyof EnvironmentVariables, string> = {
+// Defaults antes do plainToInstance: nao depender de como o class-transformer
+// trata property initializers. JWT_SECRET fica de fora - sem ele o boot cai.
+const DEFAULTS: Partial<Record<keyof EnvironmentVariables, string>> = {
   NODE_ENV: NodeEnv.Development,
   PORT: '8080',
   ROUTE_PREFIX: 'api',
   SERVICE_NAME: 'new-service',
   LOG_LEVEL: LogLevel.Info,
+  DB_HOST: 'mysql',
+  DB_PORT: '3306',
+  DB_NAME: 'app',
+  DB_USER: 'app',
+  DB_PASSWORD: 'app',
+  JWT_EXPIRES_IN: '7d',
 }
 
 export function validateEnv(raw: Record<string, unknown>): EnvironmentVariables {

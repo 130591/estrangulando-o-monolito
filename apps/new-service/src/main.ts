@@ -12,19 +12,15 @@ import { correlationIdMiddleware, REQUEST_ID_HEADER } from './logging/correlatio
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule, { bufferLogs: true })
   app.useLogger(app.get(Logger))
-
-  const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService)
-
-  // Ordem importa: resolver o x-request-id primeiro, abrir o contexto CLS
-  // depois, envolvendo todo o resto da stack.
   app.use(correlationIdMiddleware)
 
+  const config = app.get<ConfigService<EnvironmentVariables, true>>(ConfigService)
   const clsMiddleware = new ClsMiddleware({
     generateId: true,
     idGenerator: (req: Request) => req.headers[REQUEST_ID_HEADER] as string,
   })
+  
   app.use(clsMiddleware.use.bind(clsMiddleware))
-
   app.setGlobalPrefix(config.get('ROUTE_PREFIX', { infer: true }), {
     exclude: ['healthz', 'readyz'],
   })
