@@ -1,13 +1,18 @@
 variable "project_id" {
-	type = string
+  type = string
 }
 
 variable "region" {
-	type = string 
-	default = "us-central1"
+  type    = string
+  default = "us-central1"
 }
 
 variable "zone" {
-	type    = string
+  type    = string
   default = "us-central1-a"
+}
+
+variable "db_password" {
+  type      = string
+  sensitive = true
 }
