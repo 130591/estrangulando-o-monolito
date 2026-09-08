@@ -1,20 +1,20 @@
 terraform {
-	required_version = ">= 1.9"
+  required_version = ">= 1.9"
 
-	required_providers {
-		google = {
-			source  = "hashicorp/google"
-			version = "~> 6.0"
-		}
-	}
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 6.0"
+    }
+  }
 
-	backend "gcs" {
-		bucket = "estrangulando-monolito-tfstate"
-		prefix = "env/dev"
-	}
+  backend "gcs" {
+    bucket = "estrangulando-monolito-tfstate"
+    prefix = "env/dev"
+  }
 }
 
 provider "google" {
-	project = var.project_id
-	region  = var.region
+  project = var.project_id
+  region  = var.region
 }
