@@ -27,7 +27,7 @@ services:
   # Vira Cloud SQL for MySQL no GCP. Compartilhado entre legado e new-service
   # durante a coexistencia: separar os dados e uma migracao a parte.
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     container_name: mysql
     # O driver `mysql` 2.x, unico que roda em Node 9, so fala
     # mysql_native_password: com o default do 8.4 o legado responde
