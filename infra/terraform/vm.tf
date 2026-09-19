@@ -23,6 +23,44 @@ resource "google_compute_instance" "legacy" {
     subnetwork = google_compute_subnetwork.main.id
     access_config {}
   }
+
+    metadata_startup_script = <<-EOF
+    #!/bin/bash
+    set -e
+
+    # 1. Instalar Docker
+    if ! command -v docker &> /dev/null; then
+        curl -fsSL https://get.docker.com | sh
+    fi
+    gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+    mkdir -p /opt/monolito/local/nginx
+    cd /opt/monolito
+
+    cat << 'NGINX' > local/nginx/nginx.conf
+    ${file("${path.module}/../../local/nginx/nginx.conf")}
+    NGINX
+
+    cat << 'COMPOSE' > docker-compose.yml
+    ${file("${path.module}/../../docker-compose.yml")}
+    COMPOSE
+
+    export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
+
+    export DB_HOST="${google_sql_database_instance.main.private_ip_address}"
+    export DB_USER=$(gcloud secrets versions access latest --secret="db-user")
+    export DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
+    export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
+
+    cat << 'NGINX' > local/nginx/nginx.conf
+      ${file("${path.module}/../../local/nginx/nginx.conf")}
+    NGINX
+    cat << 'COMPOSE' > docker-compose.yml
+      ${file("${path.module}/../../docker-compose.yml")}
+    COMPOSE
+
+    docker compose up -d
+  EOF
 }
 
 resource "google_compute_firewall" "ssh" {
