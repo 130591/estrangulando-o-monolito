@@ -188,9 +188,12 @@ O contraste entre os dois lados é intencional e faz parte da demonstração.
 | Dependências do front | `/vendor` commitado | build com assets hasheados |
 | Hospedagem | VM + nginx | Cloud Run + backend bucket |
 
-O Node 9 é proposital e nunca sai do compose local. O front legado original usava
-Bower; como o registro foi descontinuado, o equivalente aqui é um `/vendor`
-commitado — mesmo comportamento prático, mesma ausência de build step.
+O Node 9 é proposital. Ele roda no compose local **e** na VM do lab, a partir de
+imagem publicada no Artifact Registry privado do projeto — sempre atrás da borda,
+nunca como ponto de entrada direto
+([ADR 0001](docs/adr/0001-legado-em-runtime-eol.md)). O front legado original
+usava Bower; como o registro foi descontinuado, o equivalente aqui é um
+`/vendor` commitado — mesmo comportamento prático, mesma ausência de build step.
 
 ---
 
@@ -307,7 +310,7 @@ cabeçalho dos dois arquivos.
 Registradas em [`docs/adr/`](docs/adr/). As principais:
 
 - Por que a borda, e não o runtime, é dona da rota
-- Por que o legado roda em runtime EOL neste laboratório
+- [Por que o legado roda em runtime EOL neste laboratório](docs/adr/0001-legado-em-runtime-eol.md)
 - Por que o banco permanece compartilhado durante a coexistência
 - Por que hostname separado antes de path-based routing
 
