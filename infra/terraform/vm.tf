@@ -42,22 +42,13 @@ resource "google_compute_instance" "legacy" {
     NGINX
 
     cat << 'COMPOSE' > docker-compose.yml
-    ${file("${path.module}/../../docker-compose.yml")}
+    ${file("${path.module}/../../prod/docker-compose.yml")}
     COMPOSE
-
-    export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
 
     export DB_HOST="${google_sql_database_instance.main.private_ip_address}"
     export DB_USER=$(gcloud secrets versions access latest --secret="db-user")
     export DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
     export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
-
-    cat << 'NGINX' > local/nginx/nginx.conf
-      ${file("${path.module}/../../local/nginx/nginx.conf")}
-    NGINX
-    cat << 'COMPOSE' > docker-compose.yml
-      ${file("${path.module}/../../docker-compose.yml")}
-    COMPOSE
 
     docker compose up -d
   EOF

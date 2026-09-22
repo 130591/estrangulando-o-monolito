@@ -12,12 +12,12 @@ services:
       - legacy-api
 
   legacy-front:
-    image: us-central1-docker.pkg.dev/gcp-migration-506723/apps/legacy-front:v1
+    image: us-central1-docker.pkg.dev/gcp-migration-506723/apps/legacy-front:${IMAGE_TAG:-latest}
     environment:
       - API_URL=http://legacy-api:8080
 
   legacy-api:
-    image: us-central1-docker.pkg.dev/gcp-migration-506723/apps/legacy-api:v1
+    image: us-central1-docker.pkg.dev/gcp-migration-506723/apps/legacy-api:${IMAGE_TAG:-latest}
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
