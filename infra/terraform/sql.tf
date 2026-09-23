@@ -34,6 +34,8 @@ resource "google_sql_database_instance" "main" {
     }
   }
 
+  # Lab descartável — a infra será destruída no final da demonstração.
+  # Em produção, mude para true.
   deletion_protection = false
 }
 
