@@ -1,7 +1,7 @@
 resource "google_artifact_registry_repository" "apps" {
-  location = var.region
+  location      = var.region
   repository_id = "apps"
-  format = "DOCKER"
+  format        = "DOCKER"
 }
 
 resource "google_service_account" "vm" {
@@ -19,4 +19,4 @@ resource "google_project_iam_member" "vm_secrets" {
   project = var.project_id
   role    = "roles/secretmanager.secretAccessor"
   member  = "serviceAccount:${google_service_account.vm.email}"
-}
+}
