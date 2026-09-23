@@ -1,14 +1,15 @@
 name: Deploy Legacy Apps
 
 on:
- push:
-  branches:
-    - main
-  paths:
-    # Tudo que for o legado
-    - 'apps/legacy-api/**'
-    - 'apps/legacy-front/**'
-    - 'prod/docker-compose.yml'
+  push:
+    branches:
+      - main
+    paths:
+      # Tudo que for o legado
+      - 'apps/legacy-api/**'
+      - 'apps/legacy-front/**'
+      - 'prod/docker-compose.yml'
+
 env:
   PROJECT_ID: gcp-migration-506723
   REGION: us-central1
@@ -17,47 +18,54 @@ env:
 
 jobs:
   build-and-push:
-   runs-on: ubuntu-latest
-   permissions: 
-     contents: read
-     id-token: write # Permissão obrigatória para o Workload Identity funcionar
-   
-   steps:
-     - name: Checkout do codigo
-     - uses: actions/checkout@v4
-   - name: Autenticar no GCP
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Permissão obrigatória para o Workload Identity funcionar
+
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Autenticar no GCP
         uses: google-github-actions/auth@v2
         with:
           # TODO: Substituir pelos seus outputs do Terraform
           workload_identity_provider: 'projects/SEU_PROJECT_NUMBER/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
           service_account: 'github-actions-sa@gcp-migration-506723.iam.gserviceaccount.com'
+
       - name: Configurar Docker para o Artifact Registry
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
       - name: Build e Push - Legacy API
         run: |
           IMAGE_PATH="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/legacy-api"
           docker build -t $IMAGE_PATH:latest ./apps/legacy-api
           docker push $IMAGE_PATH:latest
+
       - name: Build e Push - Legacy Front
         run: |
           IMAGE_PATH="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/legacy-front"
           docker build -t $IMAGE_PATH:latest ./apps/legacy-front
           docker push $IMAGE_PATH:latest
+
   deploy-vm:
     needs: build-and-push
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-      
+
     steps:
       - name: Autenticar no GCP
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: 'projects/SEU_PROJECT_NUMBER/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
           service_account: 'github-actions-sa@gcp-migration-506723.iam.gserviceaccount.com'
+
       - name: Setup do Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
       - name: Reiniciar containers na VM
         # Esse comando loga na VM e pede pro compose puxar as imagens :latest novas e reiniciar os containers
         run: |
