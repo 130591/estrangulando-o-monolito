@@ -12,7 +12,7 @@ resource "google_compute_subnetwork" "main" {
 
 resource "google_compute_firewall" "allow_http" {
   name    = "allow-http-monolito"
-  network = "monolito-vpc" # Ajuste para a variável da sua rede
+  network = google_compute_network.main.id
 
   allow {
     protocol = "tcp"
@@ -20,5 +20,5 @@ resource "google_compute_firewall" "allow_http" {
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["http-server"]
+  target_tags   = ["legacy"]
 }
