@@ -32,7 +32,7 @@ resource "google_compute_instance" "legacy" {
     if ! command -v docker &> /dev/null; then
         curl -fsSL https://get.docker.com | sh
     fi
-    gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+    gcloud auth configure-docker ${var.region}-docker.pkg.dev --quiet
 
     mkdir -p /opt/monolito/local/nginx
     cd /opt/monolito
@@ -46,6 +46,7 @@ resource "google_compute_instance" "legacy" {
     COMPOSE
 
     export DB_HOST="${google_sql_database_instance.main.private_ip_address}"
+    export DB_NAME="${google_sql_database.app.name}"
     export DB_USER=$(gcloud secrets versions access latest --secret="db-user")
     export DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
     export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")

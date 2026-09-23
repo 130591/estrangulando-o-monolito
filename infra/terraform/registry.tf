@@ -14,3 +14,9 @@ resource "google_project_iam_member" "vm_pull" {
   role    = "roles/artifactregistry.reader"
   member  = "serviceAccount:${google_service_account.vm.email}"
 }
+
+resource "google_project_iam_member" "vm_secrets" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.vm.email}"
+}

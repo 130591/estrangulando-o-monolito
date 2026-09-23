@@ -9,18 +9,24 @@ resource "random_password" "db_password" {
 }
 
 resource "google_secret_manager_secret" "jwt_secret" {
-	secret_id = "jwt_secret"
-	replication { auto {} }
+	secret_id = "jwt-secret"
+	replication { 
+    auto {}
+  }
 }
 
 resource "google_secret_manager_secret" "db_password" {
   secret_id = "db-password"
-  replication { auto {} }
+  replication { 
+    auto {} 
+  }
 }
 
 resource "google_secret_manager_secret" "db_user" {
   secret_id = "db-user"
-  replication { auto {} }
+  replication { 
+    auto {} 
+  }
 }
 
 resource "google_secret_manager_secret_version" "jwt_secret_version" {
