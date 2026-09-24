@@ -48,6 +48,13 @@ resource "google_project_iam_member" "github_actions_sa_user" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+# Permite ao GitHub Actions usar o tunel IAP para conectar via SSH na VM
+resource "google_project_iam_member" "github_actions_iap" {
+  project = var.project_id
+  role    = "roles/iap.tunnelResourceAccessor"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 # Conecta o Workload Identity Pool à Service Account criada
 resource "google_service_account_iam_member" "github_actions_workload_identity" {
   service_account_id = google_service_account.github_actions.name

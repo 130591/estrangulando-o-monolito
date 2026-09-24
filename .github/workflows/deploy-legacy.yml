@@ -72,4 +72,5 @@ jobs:
           gcloud compute ssh monolito-legacy \
             --zone=${{ env.ZONE }} \
             --project=${{ env.PROJECT_ID }} \
+            --tunnel-through-iap \
             --command="cd /opt/monolito && sudo docker compose pull && sudo docker compose up -d"
