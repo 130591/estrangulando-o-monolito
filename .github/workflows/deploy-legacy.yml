@@ -3,7 +3,7 @@ name: Deploy Legacy Apps
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       # Tudo que for o legado
       - 'apps/legacy-api/**'
