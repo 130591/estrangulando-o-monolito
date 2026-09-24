@@ -45,11 +45,13 @@ resource "google_compute_instance" "legacy" {
     ${file("${path.module}/../../prod/docker-compose.yml")}
     COMPOSE
 
-    export DB_HOST="${google_sql_database_instance.main.private_ip_address}"
-    export DB_NAME="${google_sql_database.app.name}"
-    export DB_USER=$(gcloud secrets versions access latest --secret="db-user")
-    export DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
-    export JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
+    cat << ENV > .env
+DB_HOST=${google_sql_database_instance.main.private_ip_address}
+DB_NAME=${google_sql_database.app.name}
+DB_USER=\$(gcloud secrets versions access latest --secret="db-user")
+DB_PASSWORD=\$(gcloud secrets versions access latest --secret="db-password")
+JWT_SECRET=\$(gcloud secrets versions access latest --secret="jwt-secret")
+ENV
 
     docker compose up -d
   EOF
