@@ -40,21 +40,23 @@ resource "google_compute_instance" "legacy" {
     # 2. Escrever nginx.conf
     cat << 'NGINX' > local/nginx/nginx.conf
     ${file("${path.module}/../../local/nginx/nginx.conf")}
-    NGINX
+
+NGINX
 
     # 3. Escrever docker-compose.yml
     cat << 'COMPOSE' > docker-compose.yml
     ${file("${path.module}/../../prod/docker-compose.yml")}
-    COMPOSE
+
+COMPOSE
 
     # 4. Escrever .env com os secrets do Secret Manager
     cat << ENV > .env
-DB_HOST=${google_sql_database_instance.main.private_ip_address}
-DB_NAME=${google_sql_database.app.name}
-DB_USER=$(gcloud secrets versions access latest --secret="db-user")
-DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
-JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
-ENV
+      DB_HOST=${google_sql_database_instance.main.private_ip_address}
+      DB_NAME=${google_sql_database.app.name}
+      DB_USER=$(gcloud secrets versions access latest --secret="db-user")
+      DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
+      JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
+      ENV
 
     # Os containers NAO sobem aqui.
     # O startup script so prepara o ambiente (Docker + arquivos).
