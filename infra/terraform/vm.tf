@@ -24,45 +24,13 @@ resource "google_compute_instance" "legacy" {
     access_config {}
   }
 
-    metadata_startup_script = <<-EOF
-    #!/bin/bash
-    set -e
-
-    # 1. Instalar Docker
-    if ! command -v docker &> /dev/null; then
-        curl -fsSL https://get.docker.com | sh
-    fi
-    gcloud auth configure-docker ${var.region}-docker.pkg.dev --quiet
-
-    mkdir -p /opt/monolito/local/nginx
-    cd /opt/monolito
-
-    # 2. Escrever nginx.conf
-    cat << 'NGINX' > local/nginx/nginx.conf
-    ${file("${path.module}/../../local/nginx/nginx.conf")}
-
-NGINX
-
-    # 3. Escrever docker-compose.yml
-    cat << 'COMPOSE' > docker-compose.yml
-    ${file("${path.module}/../../prod/docker-compose.yml")}
-
-COMPOSE
-
-    # 4. Escrever .env com os secrets do Secret Manager
-    cat << ENV_EOF > .env
-DB_HOST=${google_sql_database_instance.main.private_ip_address}
-DB_NAME=${google_sql_database.app.name}
-DB_USER=$(gcloud secrets versions access latest --secret="db-user")
-DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
-JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
-ENV_EOF
-
-    # Os containers NAO sobem aqui.
-    # O startup script so prepara o ambiente (Docker + arquivos).
-    # Quem sobe os containers e o job deploy-vm do GitHub Actions,
-    # garantindo que as imagens ja existem no Artifact Registry antes do up.
-    EOF
+  metadata_startup_script = templatefile("${path.module}/../startup.sh.tpl", {
+    region          = var.region
+    db_host         = google_sql_database_instance.main.private_ip_address
+    db_name         = google_sql_database.app.name
+    nginx_content   = file("${path.module}/../../local/nginx/nginx.conf")
+    compose_content = file("${path.module}/../../prod/docker-compose.yml")
+  })
 }
 
 resource "google_compute_firewall" "ssh" {
