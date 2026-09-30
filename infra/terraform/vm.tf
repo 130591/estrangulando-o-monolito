@@ -50,13 +50,13 @@ NGINX
 COMPOSE
 
     # 4. Escrever .env com os secrets do Secret Manager
-    cat << ENV > .env
-      DB_HOST=${google_sql_database_instance.main.private_ip_address}
-      DB_NAME=${google_sql_database.app.name}
-      DB_USER=$(gcloud secrets versions access latest --secret="db-user")
-      DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
-      JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
-      ENV
+    cat << ENV_EOF > .env
+DB_HOST=${google_sql_database_instance.main.private_ip_address}
+DB_NAME=${google_sql_database.app.name}
+DB_USER=$(gcloud secrets versions access latest --secret="db-user")
+DB_PASSWORD=$(gcloud secrets versions access latest --secret="db-password")
+JWT_SECRET=$(gcloud secrets versions access latest --secret="jwt-secret")
+ENV_EOF
 
     # Os containers NAO sobem aqui.
     # O startup script so prepara o ambiente (Docker + arquivos).
