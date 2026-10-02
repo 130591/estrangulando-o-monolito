@@ -1,31 +1,31 @@
 resource "random_password" "jwt_secret" {
-	length = 32
-	special = true
+  length  = 32
+  special = true
 }
 
 resource "random_password" "db_password" {
-	length = 16
-	special = false
+  length  = 16
+  special = false
 }
 
 resource "google_secret_manager_secret" "jwt_secret" {
-	secret_id = "jwt-secret"
-	replication { 
+  secret_id = "jwt-secret"
+  replication {
     auto {}
   }
 }
 
 resource "google_secret_manager_secret" "db_password" {
   secret_id = "db-password"
-  replication { 
-    auto {} 
+  replication {
+    auto {}
   }
 }
 
 resource "google_secret_manager_secret" "db_user" {
   secret_id = "db-user"
-  replication { 
-    auto {} 
+  replication {
+    auto {}
   }
 }
 

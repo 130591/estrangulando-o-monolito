@@ -1,7 +1,7 @@
 resource "google_compute_instance_group" "legacy" {
-  name        = "monolito-legacy-ig"
-  zone        = var.zone
-  instances   = [google_compute_instance.legacy.id]
+  name      = "monolito-legacy-ig"
+  zone      = var.zone
+  instances = [google_compute_instance.legacy.self_link]
 
   named_port {
     name = "http-8080"
@@ -67,4 +67,24 @@ resource "google_compute_firewall" "allow_gcp_health_checks" {
   # Bloco oficial de IPs do Google para Health Checks do LB
   source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
   target_tags   = ["legacy"]
+}
+
+resource "google_compute_region_network_endpoint_group" "new_front" {
+  name                  = "new-front-neg"
+  network_endpoint_type = "SERVERLESS"
+  region                = var.region
+  cloud_run {
+    service = google_cloud_run_v2_service.new_front.name
+  }
+}
+
+
+resource "google_compute_backend_service" "new_front" {
+  name                  = "new-front-backend"
+  protocol              = "HTTP"
+  port_name             = "http"
+  load_balancing_scheme = "EXTERNAL_MANAGED"
+  backend {
+    group = google_compute_region_network_endpoint_group.new_front.id
+  }
 }

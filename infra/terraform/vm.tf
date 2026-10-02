@@ -4,7 +4,7 @@ resource "google_compute_instance" "legacy" {
   zone         = var.zone
   tags         = ["legacy", "ssh"]
 
-	service_account {
+  service_account {
     email  = google_service_account.vm.email
     scopes = ["cloud-platform"]
   }
