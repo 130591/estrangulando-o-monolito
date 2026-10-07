@@ -9,6 +9,8 @@ on:
       - 'apps/legacy-api/**'
       - 'apps/legacy-front/**'
       - 'prod/docker-compose.yml'
+      - 'apps/new-service/**'
+      - 'apps/new-front/**'
 
 env:
   PROJECT_ID: gcp-migration-506723
