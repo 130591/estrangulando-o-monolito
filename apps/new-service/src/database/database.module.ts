@@ -2,6 +2,7 @@ import { Global, Inject, Module, type OnApplicationShutdown } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config'
 import { createPool, type Pool } from 'mysql2/promise'
 import type { EnvironmentVariables } from '../config/env.validation'
+import { DatabaseService } from './database.service'
 
 export const MYSQL_POOL = Symbol('MYSQL_POOL')
 
@@ -27,7 +28,7 @@ const poolProvider = {
 @Global()
 @Module({
   providers: [poolProvider],
-  exports: [MYSQL_POOL],
+  exports: [MYSQL_POOL, DatabaseService],
 })
 export class DatabaseModule implements OnApplicationShutdown {
   constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}

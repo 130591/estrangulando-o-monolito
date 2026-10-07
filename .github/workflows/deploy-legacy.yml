@@ -31,7 +31,7 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           # TODO: Substituir pelos seus outputs do Terraform
-          workload_identity_provider: 'projects/456405653171/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          workload_identity_provider: '${{ vars.GCP_WORKLOAD_PROVIDER }}'
           service_account: 'github-actions-sa@gcp-migration-506723.iam.gserviceaccount.com'
 
       - name: Configurar Docker para o Artifact Registry

@@ -1,7 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
+import { Logger } from '@nestjs/common'
+import { BadRequestException } from '@nestjs/common'
 
-import { MYSQL_POOL } from '../database/database.module'
+import { DatabaseService } from '../database/database.service'
 import type { NoteRow, NoteStats, Visibility } from '../common/types'
 
 // O que o prepared statement do mysql2 aceita como bind. Existe porque as
@@ -38,7 +40,9 @@ export type NotePatch = Partial<Omit<NoteFields, 'url' | 'domain' | 'mark'>> & {
 
 @Injectable()
 export class NotesRepository {
-  constructor(@Inject(MYSQL_POOL) private readonly pool: Pool) {}
+  private readonly logger = new Logger(NotesRepository.name)
+
+  constructor(private readonly database: DatabaseService) {}
 
   async list(userId: string, filters: ListFilters): Promise<NoteRow[]> {
     let sql = `${SELECT_NOTE}WHERE n.user_id = ? AND n.archived_at IS ${
@@ -58,12 +62,12 @@ export class NotesRepository {
 
     sql += ' ORDER BY n.created_at DESC, n.id DESC LIMIT 200'
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(sql, params)
+    const [rows] = await this.database.execute<RowDataPacket[]>(sql, params)
     return rows as NoteRow[]
   }
 
   async listPublic(userId: string): Promise<NoteRow[]> {
-    const [rows] = await this.pool.execute<RowDataPacket[]>(
+    const [rows] = await this.database.execute<RowDataPacket[]>(
       `${SELECT_NOTE}WHERE n.user_id = ? AND n.visibility = 'public' AND n.archived_at IS NULL ` +
         'ORDER BY n.created_at DESC, n.id DESC LIMIT 200',
       [userId],
@@ -72,7 +76,7 @@ export class NotesRepository {
   }
 
   async findOwned(userId: string, noteId: string): Promise<NoteRow | null> {
-    const [rows] = await this.pool.execute<RowDataPacket[]>(
+    const [rows] = await this.database.execute<RowDataPacket[]>(
       `${SELECT_NOTE}WHERE n.id = ? AND n.user_id = ?`,
       [noteId, userId],
     )
@@ -82,7 +86,7 @@ export class NotesRepository {
   // Sobre o acervo inteiro, nao sobre o resultado filtrado - por isso
   // query separada.
   async stats(userId: string): Promise<NoteStats> {
-    const [rows] = await this.pool.execute<RowDataPacket[]>(
+    const [rows] = await this.database.execute<RowDataPacket[]>(
       'SELECT COUNT(*) AS total, ' +
         "SUM(visibility = 'public' AND archived_at IS NULL) AS publicCount, " +
         'SUM(archived_at IS NOT NULL) AS archived ' +
@@ -99,21 +103,41 @@ export class NotesRepository {
   }
 
   async insert(userId: string, fields: NoteFields): Promise<string> {
-    const [result] = await this.pool.execute<ResultSetHeader>(
-      'INSERT INTO notes (user_id, tag_id, url, domain, mark, title, note, visibility) ' +
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        userId,
-        fields.tagId,
-        fields.url,
-        fields.domain,
-        fields.mark,
-        fields.title,
-        fields.note,
-        fields.visibility,
-      ],
-    )
-    return String(result.insertId)
+    try {
+      const [result] = await this.database.execute<ResultSetHeader>(
+        'INSERT INTO notes (user_id, tag_id, url, domain, mark, title, note, visibility) ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          userId,
+          fields.tagId,
+          fields.url,
+          fields.domain,
+          fields.mark,
+          fields.title,
+          fields.note,
+          fields.visibility,
+        ],
+      )
+      return String(result.insertId)
+    } catch (error) {
+      this.logger.error(
+        { err: error, userId, url: fields.url, tagId: fields.tagId },
+        'Falha ao cadastrar a nota'
+      )
+      
+      if (error instanceof Error && 'code' in error && error.code === 'ER_NO_REFERENCED_ROW_2') {
+        throw new BadRequestException('A tag informada é inválida ou não existe.')
+      }
+      
+      if (error instanceof Error && 'code' in error && error.code === 'ER_DATA_TOO_LONG') {
+        throw new BadRequestException('Um dos campos (título, nota ou URL) excedeu o limite de caracteres.')
+      }
+      
+      if (error instanceof Error && 'code' in error && error.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException('Você já possui uma nota salva com este link.')
+      }
+      throw error
+    }
   }
 
   async update(userId: string, noteId: string, patch: NotePatch): Promise<number> {
@@ -140,7 +164,7 @@ export class NotesRepository {
     if (sets.length === 0) return 0
 
     params.push(noteId, userId)
-    const [result] = await this.pool.execute<ResultSetHeader>(
+    const [result] = await this.database.execute<ResultSetHeader>(
       `UPDATE notes SET ${sets.join(', ')} WHERE id = ? AND user_id = ?`,
       params,
     )
@@ -148,7 +172,7 @@ export class NotesRepository {
   }
 
   async remove(userId: string, noteId: string): Promise<number> {
-    const [result] = await this.pool.execute<ResultSetHeader>(
+    const [result] = await this.database.execute<ResultSetHeader>(
       'DELETE FROM notes WHERE id = ? AND user_id = ?',
       [noteId, userId],
     )

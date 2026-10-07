@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { Pool, ResultSetHeader, RowDataPacket } from 'mysql2/promise'
-
+import { BadRequestException } from '@nestjs/common'
 import { MYSQL_POOL } from '../database/database.module'
 import { hueFor } from '../common/link'
 import type { TagRow } from '../common/types'
@@ -32,16 +32,23 @@ export class TagsRepository {
   async resolveByName(userId: string, name: string | null): Promise<TagRow | null> {
     if (!name) return null
 
-    await this.pool.execute<ResultSetHeader>(
-      'INSERT IGNORE INTO tags (user_id, name, hue) VALUES (?, ?, ?)',
-      [userId, name, hueFor(name)],
-    )
-
-    const [rows] = await this.pool.execute<RowDataPacket[]>(
-      'SELECT * FROM tags WHERE user_id = ? AND name = ?',
-      [userId, name],
-    )
-    return (rows[0] as TagRow) ?? null
+    try {
+      await this.pool.execute<ResultSetHeader>(
+        'INSERT IGNORE INTO tags (user_id, name, hue) VALUES (?, ?, ?)',
+        [userId, name, hueFor(name)],
+      )
+  
+      const [rows] = await this.pool.execute<RowDataPacket[]>(
+        'SELECT * FROM tags WHERE user_id = ? AND name = ?',
+        [userId, name],
+      )
+      return (rows[0] as TagRow) ?? null
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ER_DATA_TOO_LONG') {
+        throw new BadRequestException('Tag name is too long')
+      }
+      throw error
+    }
   }
 
   // `query` e nao `execute`: o INSERT em lote com `VALUES ?` e expansao do
